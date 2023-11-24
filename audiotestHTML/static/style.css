@@ -1,0 +1,76 @@
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: url('/static/images/fond.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.container {
+    max-width: 80%;
+    margin: 0 auto;
+    padding-top: 20px; /* Ajoutez un espace en haut du conteneur */
+    /* padding-bottom: 20px;  Ajoutez un espace en bas du conteneur si nécessaire */
+}
+
+
+.display-4{
+    font-size: 6em;
+    color: rgb(190, 160, 218);
+}
+
+h4 {
+    font-size: 1.5em;
+    color: blanchedalmond;
+}
+
+.btn {
+    margin-right: 1em;
+}
+#microphoneIcon {
+    color: #4CAF50; /* Couleur verte claire */
+}
+#microphoneIcon:hover {
+    font-size: 5em;
+}
+
+
+#arrow {
+    font-size: 2em;
+    cursor: pointer;
+}
+
+#text-display {
+    margin-top: 1em;
+}
+
+#console {
+    background-color: rgba(255, 255, 255, 0.8); /* Fond semi-transparent blanc */
+    padding: 2em;
+    border-radius: 0.5em;
+    margin-top: 1em;
+}
+
+.verse-info {
+    font-weight: bold;
+}
+
+.verse-text {
+    font-size: 2em;
+}
+.verse-text:hover {
+    font-size: 4em;
+}
+
+
+.verse-text-special {
+    font-style: italic;
+    color: #0f3985; /* Couleur bleu foncé */
+}
