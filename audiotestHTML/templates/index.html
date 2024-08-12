@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 
 <head>
     <meta charset="UTF-8">
@@ -12,14 +12,14 @@
 
 <body>
     <div class="container text-center">
-            <h1 class="display-4">البحث في القرآن</h1>
+        <h1 class="display-4">البحث في القرآن</h1>
     </div>
     <div class="container text-center">
-        <h4>Recherche dans le coran par la la reconnaissance Vocale</h4>
-      
+        <h4>Recherche dans le coran par la reconnaissance vocale</h4>
+
         <i id="microphoneIcon" class="fas fa-4x fa-microphone" onclick="startRecording()"></i>
 
-        <div id="arrow" onclick="showNextVerse">&#8594;</div>
+        <div id="arrow" onclick="showNextVerse()">&#8594;</div>
 
         <div id="text-display">
             <h5>Texte Enregistré Vocalement :</h5>
@@ -27,9 +27,7 @@
         </div>
 
         <div id="console" class="mt-4">
-            <p class="verse-info">السورة: </p>
-            <p class="verse-info">آية رقم:</p>
-            <p class="verse-text text-muted font-italic"></p>
+            <!-- Le résultat sera ajouté ici -->
         </div>
 
         <div id="result"></div>
@@ -40,4 +38,4 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
-
+</html>

@@ -17,15 +17,12 @@ function displayCurrentResult() {
             <p>Verset trouvé :</p>
             <ul>
                 <li>Sura: ${suraName}</li> <!-- Utiliser le nom de la sourate au lieu du numéro -->
-                <li>Verse: ${currentResult.aya}</li>
-                <li>Texte: ${currentResult.text}</li>
+                <li>Texte: ${currentResult.text}<span data-type="eoa" class="eoAaya">Verse: ${currentResult.aya}</span></li>
             </ul>
         `;
         appendToConsole(resultMessage, 'success');
     }
 }
-
-
 
 function startRecording() {
     appendToConsole('Enregistrement démarré...', 'info');
@@ -39,12 +36,10 @@ function startRecording() {
                 const sura_name = data.sura_name;
 
                 const resultMessage = `
-                <div id="console">
-                <p class="verse-info">السورة: ${sura_name}</p>
-                <p class="verse-info">  آية رقم: ${verse}</p>
-                <p class="verse-text verse-text-special"> ${texte}</p>
-            </div>
-        `;
+                    <p class="verse-info">السورة: ${sura_name}</p>
+                    <p class="verse-info">  آية رقم: ${verse}</p>
+                    <p class="verse-text verse-text-special"> ${texte}</p>
+                `;
                 appendToConsole(resultMessage, 'success');
             } else {
                 appendToConsole('Aucun verset trouvé dans la base de données.', 'info');
@@ -61,9 +56,9 @@ function stopRecording() {
 
 function appendToConsole(message, className) {
     var consoleDiv = document.getElementById('console');
-     // Supprimer le dernier affichage
 
-     while (consoleDiv.firstChild) {
+    // Supprimer le dernier affichage
+    while (consoleDiv.firstChild) {
         consoleDiv.removeChild(consoleDiv.firstChild);
     }
 

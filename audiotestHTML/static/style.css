@@ -1,3 +1,4 @@
+/* static/styles.css */
 
 body {
     font-family: 'Arial', sans-serif;
@@ -20,8 +21,7 @@ body {
     /* padding-bottom: 20px;  Ajoutez un espace en bas du conteneur si nécessaire */
 }
 
-
-.display-4{
+.display-4 {
     font-size: 6em;
     color: rgb(190, 160, 218);
 }
@@ -34,13 +34,14 @@ h4 {
 .btn {
     margin-right: 1em;
 }
+
 #microphoneIcon {
     color: #4CAF50; /* Couleur verte claire */
 }
+
 #microphoneIcon:hover {
     font-size: 5em;
 }
-
 
 #arrow {
     font-size: 2em;
@@ -65,12 +66,30 @@ h4 {
 .verse-text {
     font-size: 2em;
 }
+
 .verse-text:hover {
     font-size: 4em;
 }
 
-
 .verse-text-special {
     font-style: italic;
     color: #0f3985; /* Couleur bleu foncé */
+}
+
+/* Styles pour le numéro de verset */
+.verse-number {
+    display: inline-block;
+    width: 24px; /* Ajustez la taille selon vos besoins */
+    height: 24px; /* Ajustez la taille selon vos besoins */
+    text-align: center;
+    line-height: 24px; /* Centrez verticalement le texte */
+    border-radius: 50%; /* Cela crée un fond de cercle */
+    background-color: #000; /* Couleur du fond de cercle */
+    color: #fff; /* Couleur du texte */
+    font-weight: bold;
+    margin-right: 8px; /* Ajustez l'espacement entre le numéro de verset et le texte */
+}
+
+.service strong {
+    color: red !important;
 }

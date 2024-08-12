@@ -97,7 +97,7 @@ def transcribe():
             print(f"Verset trouvé - Sura: {sura_number}, Verse: {verse}, Texte: {result[2]}")
             return jsonify({'text': text, 'result': result, 'sura_name': sura_name})
         else:
-            print("Aucun verset trouvé dans la base de données.")
+            print("Aucun verset trouvé dans la base de données." )
             return jsonify({'text': text, 'result': 'Aucun verset trouvé'})
 
     except sr.UnknownValueError:
