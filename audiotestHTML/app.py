@@ -1,74 +1,83 @@
 from flask import Flask, render_template, request, jsonify
 import speech_recognition as sr
-import pyttsx3
 import mysql.connector
 import os
 
 app = Flask(__name__, static_url_path='/static')
 
-# Utilisation de variables d'environnement
-DB_HOST = os.environ.get("DB_HOST", "localhost")
-DB_USER = os.environ.get("DB_USER", "root")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
-DB_DATABASE = os.environ.get("DB_DATABASE", "quran")
+# Configuration des variables pour la base de données
+DB_USER = "root"
+DB_PASSWORD = "root"
+DB_DATABASE = "quran"
+UNIX_SOCKET = "/Applications/MAMP/tmp/mysql/mysql.sock"
 
-# Configuration CORS
-@app.after_request
-def add_cors_headers(response):
-    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
-    response.headers['Access-Control-Allow-Origin'] = allowed_origins
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
+def get_db_connection():
+    try:
+        conn = mysql.connector.connect(
+            user=DB_USER,
+            password=DB_PASSWORD,
+            unix_socket=UNIX_SOCKET,
+            database=DB_DATABASE,
+            raise_on_warnings=True
+        )
+        return conn
+    except mysql.connector.Error as err:
+        print(f"Erreur de base de données : {err}")
+        return None
 
 def search_arabic_database(text):
-    # Utilisation de requêtes préparées pour la sécurité
-    conn = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_DATABASE,
-        charset='utf8mb4'
-    )
-    cursor = conn.cursor()
+    try:
+        with get_db_connection() as conn:
+            if conn is None:
+                return None
 
-    words = text.split()
-    query = "SELECT sura, aya, text FROM quran_text WHERE " + " OR ".join(["INSTR(text, %s)" for _ in words])
-    cursor.execute(query, tuple(word for word in words))
+            cursor = conn.cursor()
 
-    results = cursor.fetchall()
-    conn.close()
+            # Diviser le texte en mots individuels
+            words = text.split()
 
-    major_result = None
-    max_word_count = 0
+            # Construire dynamiquement la requête SQL avec INSTR
+            query = "SELECT sura, aya, text FROM quran_text WHERE " + " OR ".join(
+                ["INSTR(text, %s) > 0" for _ in words]
+            )
+            cursor.execute(query, tuple(words))
 
-    for result in results:
-        text_result = result[2]
-        word_count = sum(1 for word in words if word in text_result)
-        if word_count > max_word_count:
-            max_word_count = word_count
-            major_result = result
+            results = cursor.fetchall()
 
-    return major_result
+            major_result = None
+            max_word_count = 0
 
-# Gestion des exceptions et validation des données utilisateur
+            # Trouver le résultat qui correspond le mieux
+            for result in results:
+                text_result = result[2]
+                word_count = sum(1 for word in words if word in text_result)
+                if word_count > max_word_count:
+                    max_word_count = word_count
+                    major_result = result
+
+            return major_result
+
+    except mysql.connector.Error as err:
+        print(f"Erreur de base de données : {err}")
+        return None
+
 def get_sura_name(sura_number):
-    conn = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_DATABASE,
-        charset='utf8mb4'
-    )
-    cursor = conn.cursor()
+    try:
+        with get_db_connection() as conn:
+            if conn is None:
+                return None
 
-    query = "SELECT sura_name FROM sura_names WHERE sura_number = %s"
-    cursor.execute(query, (sura_number,))
-    sura_name = cursor.fetchone()[0]  # Supposant que le numéro de sourate est unique
+            cursor = conn.cursor()
 
-    conn.close()
+            query = "SELECT sura_name FROM sura_names WHERE sura_number = %s"
+            cursor.execute(query, (sura_number,))
+            sura_name = cursor.fetchone()[0]  # Supposant que le numéro de sourate est unique
 
-    return sura_name
+            return sura_name
+
+    except mysql.connector.Error as err:
+        print(f"Erreur de base de données lors de la récupération du nom de la sourate : {err}")
+        return None
 
 @app.route('/')
 def index():
@@ -76,37 +85,47 @@ def index():
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    r = sr.Recognizer()
-    engine = pyttsx3.init()
-
-    with sr.Microphone() as source:
-        print("Ecoute...")
-        audio = r.listen(source)
-
     try:
-        text = r.recognize_google(audio, language='ar')
+        # Initialisation des outils de reconnaissance vocale
+        print("Initialisation de la reconnaissance vocale...")
+        recognizer = sr.Recognizer()
+
+        # Capture de l'audio
+        with sr.Microphone() as source:
+            print("Écoute...")
+            audio = recognizer.listen(source)
+
+        # Transcription de l'audio en texte
+        print("Transcription en cours...")
+        text = recognizer.recognize_google(audio, language='ar')
         print("Texte transcrit : " + text)
 
+        # Recherche dans la base de données
         result = search_arabic_database(text)
+        print("Résultat de la recherche dans la base de données : ", result)
 
         if result:
             sura_number = result[0]
             verse = result[1]
             sura_name = get_sura_name(sura_number)
-
             print(f"Verset trouvé - Sura: {sura_number}, Verse: {verse}, Texte: {result[2]}")
             return jsonify({'text': text, 'result': result, 'sura_name': sura_name})
         else:
-            print("Aucun verset trouvé dans la base de données." )
+            print("Aucun verset trouvé dans la base de données.")
             return jsonify({'text': text, 'result': 'Aucun verset trouvé'})
 
     except sr.UnknownValueError:
-        print("Je n'ai pas compris")
-        return jsonify({'error': 'Je n\'ai pas compris'})
+        print("Je n'ai pas compris l'audio")
+        return jsonify({'error': 'Je n\'ai pas compris'}), 400
+
     except sr.RequestError as e:
-        print("Erreur de service : {0}".format(e))
-        return jsonify({'error': 'Erreur de service'})
+        print(f"Erreur de service Google : {e}")
+        return jsonify({'error': 'Erreur de service'}), 500
+
+    except Exception as e:
+        print(f"Erreur inconnue : {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Utilisation d'une configuration différente pour le développement et la production
-    app.run(debug=True, host='0.0.0.0')
+    # Lancement de l'application Flask
+    app.run(debug=True)

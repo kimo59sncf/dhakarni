@@ -12,11 +12,11 @@ function displayCurrentResult() {
     const currentResult = resultsArray[currentResultIndex];
 
     if (currentResult) {
-        const suraName = currentResult.sura_name; // Utilisation du nom de la sourate au lieu du numéro
+        const suraName = currentResult.sura_name;
         const resultMessage = `
             <p>Verset trouvé :</p>
             <ul>
-                <li>Sura: ${suraName}</li> <!-- Utiliser le nom de la sourate au lieu du numéro -->
+                <li>Sura: ${suraName}</li>
                 <li>Texte: ${currentResult.text}<span data-type="eoa" class="eoAaya">Verse: ${currentResult.aya}</span></li>
             </ul>
         `;
@@ -24,11 +24,21 @@ function displayCurrentResult() {
     }
 }
 
-function startRecording() {
+async function startRecording() {
     appendToConsole('Enregistrement démarré...', 'info');
-    fetch('/transcribe', { method: 'POST' })
-        .then(response => response.json())
-        .then(data => {
+    
+    var textDisplay = document.getElementById('text-display');
+    textDisplay.classList.add('visible');
+    
+    try {
+        const response = await fetch('/transcribe', { method: 'POST' });
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const text = await response.text();
+
+        try {
+            const data = JSON.parse(text);
             if (data.result) {
                 const sura_number = data.result[0];
                 const verse = data.result[1];
@@ -44,10 +54,14 @@ function startRecording() {
             } else {
                 appendToConsole('Aucun verset trouvé dans la base de données.', 'info');
             }
-        })
-        .catch(error => {
-            appendToConsole('Erreur lors de l\'enregistrement : ' + error.message, 'error');
-        });
+        } catch (error) {
+            console.error('Erreur lors de la conversion en JSON :', error.message);
+            console.log('Réponse brute :', text);
+            appendToConsole('Erreur inattendue lors de l\'enregistrement : réponse non valide.', 'error');
+        }
+    } catch (error) {
+        appendToConsole('Erreur lors de l\'enregistrement : ' + error.message, 'error');
+    }
 }
 
 function stopRecording() {
@@ -57,7 +71,6 @@ function stopRecording() {
 function appendToConsole(message, className) {
     var consoleDiv = document.getElementById('console');
 
-    // Supprimer le dernier affichage
     while (consoleDiv.firstChild) {
         consoleDiv.removeChild(consoleDiv.firstChild);
     }
@@ -66,4 +79,6 @@ function appendToConsole(message, className) {
     messageDiv.className = className;
     messageDiv.innerHTML = message;
     consoleDiv.appendChild(messageDiv);
+
+    consoleDiv.classList.add('visible');
 }
