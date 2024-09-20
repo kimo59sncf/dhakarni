@@ -1,1 +1,4 @@
 /quran (1).sql
+.venv/
+__pycache__/
+*.sql
