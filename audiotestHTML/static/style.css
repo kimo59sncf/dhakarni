@@ -1,4 +1,9 @@
-/* static/styles.css */
+:root {
+    --primary-color: rgb(142, 76, 205);
+    --secondary-color: rgb(25, 216, 41);
+    --text-color: #0f3985;
+    --background-opacity: 0.9;
+}
 
 body {
     font-family: 'Arial', sans-serif;
@@ -8,55 +13,107 @@ body {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
 }
 
+/* Conteneur central */
 .container {
-    max-width: 80%;
+    width: 90%;
+    max-width: 1200px;
     margin: 0 auto;
-    padding-top: 20px; /* Ajoutez un espace en haut du conteneur */
-    /* padding-bottom: 20px;  Ajoutez un espace en bas du conteneur si nécessaire */
+    padding: 20px;
+    background-color: rgba(255, 255, 255, var(--background-opacity));
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    .display-4 {
+        font-size: 3em;
+    }
+    .verse-text {
+        font-size: 1.5em;
+    }
+    .verse-text:hover {
+        font-size: 2em;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+    .display-4 {
+        font-size: 2em;
+    }
+    .verse-text {
+        font-size: 1.2em;
+    }
+    .verse-text:hover {
+        font-size: 1.5em;
+    }
+}
+
+/* Styles pour les titres */
 .display-4 {
-    font-size: 6em;
-    color: rgb(190, 160, 218);
+    font-size: 5em;
+    color: var(--primary-color);
+    margin-bottom: 0.5em;
 }
 
 h4 {
-    font-size: 1.5em;
-    color: blanchedalmond;
+    font-size: 1.8em;
+    color: var(--secondary-color);
+    margin-bottom: 1.5em;
 }
 
-.btn {
-    margin-right: 1em;
+.btn, #microphoneIcon {
+    margin: 0.5em;
+    font-size: 2em;
 }
 
 #microphoneIcon {
-    color: #4CAF50; /* Couleur verte claire */
+    color: #4CAF50;
+    cursor: pointer;
+    transition: transform 0.3s ease, color 0.3s ease;
 }
 
 #microphoneIcon:hover {
-    font-size: 5em;
+    transform: scale(1.3);
+    color: #388E3C;
 }
 
 #arrow {
-    font-size: 2em;
+    font-size: 2.5em;
     cursor: pointer;
-}
-
-#text-display {
     margin-top: 1em;
+    transition: color 0.3s ease, transform 0.3s ease;
 }
 
+#arrow:hover {
+    color: var(--primary-color);
+    transform: translateX(5px);
+}
+
+/* Console de résultat */
 #console {
-    background-color: rgba(255, 255, 255, 0.8); /* Fond semi-transparent blanc */
+    background-color: rgba(255, 255, 255, 0.8);
     padding: 2em;
     border-radius: 0.5em;
-    margin-top: 1em;
+    margin-top: 2em;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#console.visible {
+    opacity: 1;
 }
 
 .verse-info {
@@ -65,31 +122,40 @@ h4 {
 
 .verse-text {
     font-size: 2em;
+    transition: font-size 0.3s ease, color 0.3s ease;
 }
 
 .verse-text:hover {
-    font-size: 4em;
+    font-size: 2.2em;
+    color: var(--text-color);
 }
 
 .verse-text-special {
     font-style: italic;
-    color: #0f3985; /* Couleur bleu foncé */
+    color: var(--text-color);
 }
 
-/* Styles pour le numéro de verset */
 .verse-number {
     display: inline-block;
-    width: 24px; /* Ajustez la taille selon vos besoins */
-    height: 24px; /* Ajustez la taille selon vos besoins */
+    width: 24px;
+    height: 24px;
     text-align: center;
-    line-height: 24px; /* Centrez verticalement le texte */
-    border-radius: 50%; /* Cela crée un fond de cercle */
-    background-color: #000; /* Couleur du fond de cercle */
-    color: #fff; /* Couleur du texte */
+    line-height: 24px;
+    border-radius: 50%;
+    background-color: #000;
+    color: #fff;
     font-weight: bold;
-    margin-right: 8px; /* Ajustez l'espacement entre le numéro de verset et le texte */
+    margin-right: 8px;
 }
 
-.service strong {
-    color: red !important;
+#text-display {
+    margin-top: 1em;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#text-display.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
