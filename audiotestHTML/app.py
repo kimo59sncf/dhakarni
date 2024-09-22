@@ -1,22 +1,22 @@
 import sys
-#sys.path.append('/Users/kimo/dev/www/dhakarni/venv/lib/python3.11/site-packages')
+import os
 from flask import Flask, render_template, request, jsonify
 import speech_recognition as sr
 import mysql.connector
-import os
-from gtts import gTTS
 import io
+from gtts import gTTS
+
+# Ajout du chemin pour le dossier venv
 
 app = Flask(__name__, static_url_path='/static')
 
-# Mise à jour avec les nouvelles informations de la base de données
-DB_HOST = "sql8.freesqldatabase.com"
-DB_USER = "sql8732822"
-DB_PASSWORD = "cbSjwGd9Xe"
-DB_DATABASE = "sql8732822"
-DB_PORT = 3306
+# Utilisation de variables d'environnement pour les détails de la base de données
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_USER = os.environ.get("DB_USER", "root")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
+DB_DATABASE = os.environ.get("DB_DATABASE", "quran")
 
-# Configuration CORS
+# Fonction pour ajouter les en-têtes CORS
 @app.after_request
 def add_cors_headers(response):
     allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
@@ -31,13 +31,14 @@ def search_arabic_database(text):
         user=DB_USER,
         password=DB_PASSWORD,
         database=DB_DATABASE,
-        port=DB_PORT
+        charset='utf8mb4',
+        unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'
     )
     cursor = conn.cursor()
 
     words = text.split()
     query = "SELECT sura, aya, text FROM quran_text WHERE " + " OR ".join(["INSTR(text, %s)" for _ in words])
-    cursor.execute(query, tuple(word for word in words))
+    cursor.execute(query, tuple(words))
 
     results = cursor.fetchall()
     conn.close()
@@ -60,7 +61,8 @@ def get_sura_name(sura_number):
         user=DB_USER,
         password=DB_PASSWORD,
         database=DB_DATABASE,
-        port=DB_PORT
+        charset='utf8mb4',
+        unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'
     )
     cursor = conn.cursor()
 
@@ -72,21 +74,20 @@ def get_sura_name(sura_number):
 
     return sura_name
 
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    r = sr.Recognizer()
+    recognizer = sr.Recognizer()
 
     with sr.Microphone() as source:
         print("Ecoute...")
-        audio = r.listen(source)
+        audio = recognizer.listen(source)
 
     try:
-        text = r.recognize_google(audio, language='ar')
+        text = recognizer.recognize_google(audio, language='ar')
         print("Texte transcrit : " + text)
 
         result = search_arabic_database(text)
