@@ -12,7 +12,6 @@ mysql-connector-python==8.0.33
 packaging==24.1
 pipdeptree==2.23.1
 protobuf==3.20.3
-#PyAudio==0.2.14
 pyttsx3==2.90
 requests==2.32.3
 SpeechRecognition==3.8.1
