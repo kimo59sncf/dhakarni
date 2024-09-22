@@ -6,10 +6,11 @@ import os
 app = Flask(__name__, static_url_path='/static')
 
 # Configuration des variables pour la base de données
-DB_USER = "root"
-DB_PASSWORD = "root"
-DB_DATABASE = "quran"
-UNIX_SOCKET = "/Applications/MAMP/tmp/mysql/mysql.sock"
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
+DB_DATABASE = os.getenv("DB_DATABASE", "quran")
+DB_PORT = os.getenv("DB_PORT", 3306)
 
 def get_db_connection():
     try:
