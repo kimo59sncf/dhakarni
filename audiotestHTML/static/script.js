@@ -24,45 +24,95 @@ function displayCurrentResult() {
     }
 }
 
-async function startRecording() {
-    appendToConsole('Enregistrement démarré...', 'info');
-    
-    var textDisplay = document.getElementById('text-display');
-    textDisplay.classList.add('visible');
-    
-    try {
-        const response = await fetch('/transcribe', { method: 'POST' });
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        const text = await response.text();
+function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            let options = null;
 
-        try {
-            const data = JSON.parse(text);
-            if (data.result) {
-                const sura_number = data.result[0];
-                const verse = data.result[1];
-                const texte = data.result[2];
-                const sura_name = data.sura_name;
-
-                const resultMessage = `
-                    <p class="verse-info">السورة: ${sura_name}</p>
-                    <p class="verse-info">  آية رقم: ${verse}</p>
-                    <p class="verse-text verse-text-special"> ${texte}</p>
-                `;
-                appendToConsole(resultMessage, 'success');
+            if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
+                options = { mimeType: 'audio/webm; codecs=opus' };
+            } else if (MediaRecorder.isTypeSupported('audio/ogg; codecs=opus')) {
+                options = { mimeType: 'audio/ogg; codecs=opus' };
             } else {
-                appendToConsole('Aucun verset trouvé dans la base de données.', 'info');
+                console.error('Aucun type MIME supporté trouvé pour MediaRecorder.');
+                return;
             }
-        } catch (error) {
-            console.error('Erreur lors de la conversion en JSON :', error.message);
-            console.log('Réponse brute :', text);
-            appendToConsole('Erreur inattendue lors de l\'enregistrement : réponse non valide.', 'error');
-        }
-    } catch (error) {
-        appendToConsole('Erreur lors de l\'enregistrement : ' + error.message, 'error');
-    }
+
+            const mediaRecorder = new MediaRecorder(stream, options);
+            let chunks = [];
+
+            mediaRecorder.ondataavailable = function (event) {
+                chunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = function () {
+                const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
+                const formData = new FormData();
+                let filename = 'audio.webm';
+
+                if (mediaRecorder.mimeType.includes('ogg')) {
+                    filename = 'audio.ogg';
+                }
+
+                formData.append('audio', blob, filename);
+
+                fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.result) {
+                        displayResult(data.result);
+                    } else {
+                        console.error('Erreur:', data.error);
+                        appendToConsole(data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors de l\'envoi de l\'audio:', error);
+                });
+            };
+
+            mediaRecorder.start();
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 5000); // Enregistre pendant 5 secondes
+        })
+        .catch(error => {
+            console.error('Erreur lors de l\'accès au micro:', error);
+        });
 }
+
+function displayResult(result) {
+    const resultMessage = `
+        <p>Texte transcrit : ${result.transcribed_text}</p>
+        <p>Résultat trouvé :</p>
+        <ul>
+            <li>Sourate : ${result.sura_name} (${result.sura_number})</li>
+            <li>Verset : ${result.aya_number}</li>
+            <li>Texte : ${result.aya_text}</li>
+        </ul>
+    `;
+    appendToConsole(resultMessage, 'success');
+}
+
+function appendToConsole(message, className) {
+    var consoleDiv = document.getElementById('console');
+
+    while (consoleDiv.firstChild) {
+        consoleDiv.removeChild(consoleDiv.firstChild);
+    }
+
+    var messageDiv = document.createElement('div');
+    messageDiv.className = className;
+    messageDiv.innerHTML = message;
+    consoleDiv.appendChild(messageDiv);
+
+    consoleDiv.classList.add('visible');
+}
+
 
 function stopRecording() {
     // Vous pouvez ajouter du code ici si nécessaire

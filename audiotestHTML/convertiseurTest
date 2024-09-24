@@ -1,0 +1,32 @@
+import os
+from pydub import AudioSegment
+import io
+
+def convert_audio_to_wav(audio_file):
+    # Extraire l'extension à partir du nom de fichier
+    audio_format = os.path.splitext(audio_file.name)[-1].lower().strip('.')
+
+    if audio_format == 'mp3':
+        sound = AudioSegment.from_mp3(audio_file)
+    elif audio_format == 'ogg':
+        sound = AudioSegment.from_ogg(audio_file)
+    else:
+        return None, 'Format de fichier non pris en charge.'
+
+    # Convertir le fichier en WAV
+    wav_io = io.BytesIO()
+    sound.export(wav_io, format="wav")
+    wav_io.seek(0)
+    
+    return wav_io, None
+
+# Test avec un fichier local
+with open("/Applications/MAMP/htdocs/myCuran/dhakarni/audiotestHTML/fichier.mp3", "rb") as audio_file:
+    wav_audio, error = convert_audio_to_wav(audio_file)
+    if error:
+        print(error)
+    else:
+        # Sauvegarder le fichier WAV pour vérifier la conversion
+        with open("output_test.wav", "wb") as f:
+            f.write(wav_audio.getvalue())
+        print("Conversion réussie !")

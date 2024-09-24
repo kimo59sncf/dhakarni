@@ -1,30 +1,73 @@
-import sys
 import os
+import io
 from flask import Flask, render_template, request, jsonify
+from pydub import AudioSegment
+from pydub.utils import which
 import speech_recognition as sr
 import mysql.connector
-import io
-from gtts import gTTS
 
-# Ajout du chemin pour le dossier venv
+app = Flask(__name__)
 
-app = Flask(__name__, static_url_path='/static')
+# Configurer pydub pour trouver ffmpeg
+AudioSegment.converter = which("ffmpeg")
 
-# Utilisation de variables d'environnement pour les détails de la base de données
-DB_HOST = os.environ.get("DB_HOST", "localhost")
-DB_USER = os.environ.get("DB_USER", "root")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
-DB_DATABASE = os.environ.get("DB_DATABASE", "quran")
+# Connexion à la base de données
+DB_HOST = "sql8.freesqldatabase.com"
+DB_USER = "sql8732822"
+DB_PASSWORD = "cbSjwGd9Xe"
+DB_DATABASE = "sql8732822"
+DB_PORT = 3306
 
-# Fonction pour ajouter les en-têtes CORS
-@app.after_request
-def add_cors_headers(response):
-    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "*")
-    response.headers['Access-Control-Allow-Origin'] = allowed_origins
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
+# Fonction pour convertir l'audio en WAV si nécessaire
+def convert_audio_to_wav(audio_file):
+    audio_format = os.path.splitext(audio_file.filename)[-1].lower().strip('.')
 
+    # Lire les données du fichier
+    file_data = audio_file.read()
+
+    # Conversion selon le format d'entrée
+    try:
+        if audio_format == 'mp3':
+            sound = AudioSegment.from_mp3(io.BytesIO(file_data))
+        elif audio_format == 'ogg':
+            sound = AudioSegment.from_ogg(io.BytesIO(file_data))
+        elif audio_format == 'webm':
+            sound = AudioSegment.from_file(io.BytesIO(file_data), format='webm')
+        elif audio_format == 'wav':
+            sound = AudioSegment.from_wav(io.BytesIO(file_data))
+        else:
+            return None, f'Format de fichier non pris en charge: {audio_format}'
+
+        # Exporter en WAV
+        wav_io = io.BytesIO()
+        sound.export(wav_io, format="wav")
+        wav_io.seek(0)
+
+        return wav_io, None
+    except Exception as e:
+        return None, f'Erreur lors de la conversion audio : {str(e)}'
+
+# Fonction pour obtenir le nom de la sourate
+def get_sura_name(sura_number):
+    conn = mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_DATABASE,
+        charset='utf8mb4',
+       # unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'  # Mettez à jour ce chemin si nécessaire
+    )
+    cursor = conn.cursor()
+
+    query = "SELECT sura_name FROM sura_names WHERE sura_number = %s"
+    cursor.execute(query, (sura_number,))
+    sura_name = cursor.fetchone()[0]
+
+    conn.close()
+
+    return sura_name
+
+# Fonction pour rechercher des données dans la base de données
 def search_arabic_database(text):
     conn = mysql.connector.connect(
         host=DB_HOST,
@@ -32,7 +75,7 @@ def search_arabic_database(text):
         password=DB_PASSWORD,
         database=DB_DATABASE,
         charset='utf8mb4',
-        unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'
+        #unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'  # Mettez à jour ce chemin si nécessaire
     )
     cursor = conn.cursor()
 
@@ -45,9 +88,9 @@ def search_arabic_database(text):
 
     major_result = None
     max_word_count = 0
-
     for result in results:
         text_result = result[2]
+
         word_count = sum(1 for word in words if word in text_result)
         if word_count > max_word_count:
             max_word_count = word_count
@@ -55,66 +98,56 @@ def search_arabic_database(text):
 
     return major_result
 
-def get_sura_name(sura_number):
-    conn = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_DATABASE,
-        charset='utf8mb4',
-        unix_socket='/Applications/MAMP/tmp/mysql/mysql.sock'
-    )
-    cursor = conn.cursor()
-
-    query = "SELECT sura_name FROM sura_names WHERE sura_number = %s"
-    cursor.execute(query, (sura_number,))
-    sura_name = cursor.fetchone()[0]
-
-    conn.close()
-
-    return sura_name
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'Aucun fichier audio fourni.'}), 400
+
+    audio_file = request.files['audio']
     recognizer = sr.Recognizer()
 
-    with sr.Microphone() as source:
-        print("Ecoute...")
-        audio = recognizer.listen(source)
+    # Conversion de l'audio en WAV
+    wav_audio, error = convert_audio_to_wav(audio_file)
+    if error:
+        return jsonify({'error': error}), 400
 
     try:
-        text = recognizer.recognize_google(audio, language='ar')
-        print("Texte transcrit : " + text)
+        # Utilisation du fichier WAV avec speech_recognition
+        with sr.AudioFile(wav_audio) as source:
+            audio = recognizer.record(source)
+            text = recognizer.recognize_google(audio, language='ar')
 
-        result = search_arabic_database(text)
+            # Recherche du texte transcrit dans la base de données
+            major_result = search_arabic_database(text)
 
-        if result:
-            sura_number = result[0]
-            verse = result[1]
-            sura_name = get_sura_name(sura_number)
+            if major_result:
+                sura_number = major_result[0]
+                aya_number = major_result[1]
+                aya_text = major_result[2]
+                sura_name = get_sura_name(sura_number)
 
-            # Synthèse vocale avec gTTS
-            tts = gTTS(text=result[2], lang='ar')
-            audio_file = io.BytesIO()
-            tts.write_to_fp(audio_file)
-            audio_file.seek(0)
+                result = {
+                    'sura_number': sura_number,
+                    'sura_name': sura_name,
+                    'aya_number': aya_number,
+                    'aya_text': aya_text,
+                    'transcribed_text': text
+                }
 
-            print(f"Verset trouvé - Sura: {sura_number}, Verse: {verse}, Texte: {result[2]}")
-            return jsonify({'text': text, 'result': result, 'sura_name': sura_name})
-        else:
-            print("Aucun verset trouvé dans la base de données.")
-            return jsonify({'text': text, 'result': 'Aucun verset trouvé'})
+                return jsonify({'result': result})
+            else:
+                return jsonify({'error': 'Aucun verset correspondant trouvé.'})
 
-    except sr.UnknownValueError:
-        print("Je n'ai pas compris")
-        return jsonify({'error': 'Je n\'ai pas compris'})
+    except sr.UnknownValueError as e:
+        return jsonify({'error': f'Erreur de compréhension vocale : {str(e)}'}), 400
     except sr.RequestError as e:
-        print("Erreur de service : {0}".format(e))
-        return jsonify({'error': 'Erreur de service'})
+        return jsonify({'error': f'Erreur du service de reconnaissance vocale : {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Erreur inconnue : {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True)

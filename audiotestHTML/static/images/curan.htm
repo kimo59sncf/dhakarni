@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- saved from url=(0022)http://127.0.0.1:5000/ -->
+<html lang="ar"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnaissance Vocale</title>
+    <link rel="stylesheet" href="./curan_files/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="./curan_files/all.min.css"> <!-- Inclure FontAwesome -->
+    <link rel="stylesheet" type="text/css" href="./curan_files/style.css">
+</head>
+
+<body>
+    <div class="container text-center">
+        <h1 class="display-4">البحث في القرآن</h1>
+    </div>
+    <div class="container text-center">
+        <h4>Recherche dans le coran par la reconnaissance vocale</h4>
+
+        <i id="microphoneIcon" class="fas fa-4x fa-microphone" onclick="startRecording()"></i>
+
+        <div id="arrow" onclick="showNextVerse()">→</div>
+
+        <div id="text-display">
+            <h5>Texte Enregistré Vocalement :</h5>
+            <p id="recorded-text"></p>
+        </div>
+
+        <div id="console" class="mt-4">
+            <!-- Le résultat sera ajouté ici -->
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script src="./curan_files/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="./curan_files/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="./curan_files/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="./curan_files/script.js"></script>
+
+</body></html>
